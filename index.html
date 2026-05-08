@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🤠 COWBOY DUEL - Movimento e Desvio 🤠</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #2a1a0a 0%, #1a0a00 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', 'Monaco', monospace;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .game-container {
+            position: relative;
+            background: #3a2a1a;
+            border-radius: 20px;
+            padding: 10px;
+            border: 5px solid #8B6914;
+            box-shadow: 0 0 50px rgba(139, 105, 20, 0.5);
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 10px;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-card {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            padding: 8px 15px;
+            border-radius: 10px;
+            border: 2px solid #8B6914;
+            text-align: center;
+        }
+
+        .hud-label {
+            font-size: 10px;
+            color: #DAA520;
+            letter-spacing: 2px;
+        }
+
+        .hud-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0 0 5px #DAA520;
+        }
+
+        .health-bar {
+            width: 120px;
+            height: 8px;
+            background: #330000;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #DAA520, #FF6600);
+            transition: width 0.2s;
+        }
+
+        /* Controles Mobile */
+        .mobile-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .joystick-area {
+            pointer-events: auto;
+            width: 120px;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            border: 2px solid #DAA520;
+            position: relative;
+        }
+
+        .joystick-base {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            background: rgba(218, 165, 32, 0.15);
+            border-radius: 50%;
+        }
+
+        .joystick-thumb {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: #DAA520;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.05s linear;
+            box-shadow: 0 0 15px #DAA520;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .shoot-button {
+            pointer-events: auto;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #DAA520, #8B6914);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #FFD700;
+            box-shadow: 0 0 20px rgba(218, 165, 32, 0.5);
+            cursor: pointer;
+            transition: transform 0.1s;
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .shoot-button:active {
+            transform: scale(0.95);
+        }
+
+        .shoot-button span {
+            font-size: 10px;
+            margin-top: 3px;
+        }
+
+        .controls-info {
+            position: absolute;
+            bottom: 20px;
+            left: 150px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 9px;
+            color: #DAA520;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .duel-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: #DAA520;
+            text-shadow: 3px 3px 0 #8B4513;
+            white-space: nowrap;
+            z-index: 20;
+            pointer-events: none;
+            animation: fadeOut 1s forwards;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+        }
+
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px 50px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 1000;
+            border: 3px solid #DAA520;
+            box-shadow: 0 0 50px rgba(218, 165, 32, 0.5);
+        }
+
+        .game-over h1 {
+            font-size: 42px;
+            margin-bottom: 15px;
+        }
+
+        .game-over p {
+            color: #ccc;
+            margin: 10px 0;
+        }
+
+        button {
+            background: linear-gradient(135deg, #DAA520, #8B6914);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: monospace;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (min-width: 769px) {
+            .mobile-controls {
+                display: none;
+            }
+            .controls-info {
+                display: block;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hud-value {
+                font-size: 14px;
+            }
+            .health-bar {
+                width: 80px;
+            }
+            .controls-info {
+                display: none;
+            }
+            .joystick-area {
+                width: 100px;
+                height: 100px;
+            }
+            .joystick-base {
+                width: 60px;
+                height: 60px;
+            }
+            .joystick-thumb {
+                width: 35px;
+                height: 35px;
+            }
+            .shoot-button {
+                width: 70px;
+                height: 70px;
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .joystick-area {
+                width: 85px;
+                height: 85px;
+            }
+            .shoot-button {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="900" height="550"></canvas>
+        
+        <div class="hud">
+            <div class="hud-card">
+                <div class="hud-label">🤠 VOCÊ</div>
+                <div class="health-bar">
+                    <div class="health-fill" id="playerHealth" style="width: 100%"></div>
+                </div>
+                <div class="hud-value" id="playerHp">100</div>
+            </div>
+            <div class="hud-card">
+                <div class="hud-label">⭐ HONRA</div>
+                <div class="hud-value" id="honor">0</div>
+            </div>
+            <div class="hud-card">
+                <div class="hud-label">🏆 VITÓRIAS</div>
+                <div class="hud-value" id="wins">0</div>
+            </div>
+            <div class="hud-card">
+                <div class="hud-label">🤠 INIMIGO</div>
+                <div class="health-bar">
+                    <div class="health-fill" id="enemyHealth" style="width: 100%"></div>
+                </div>
+                <div class="hud-value" id="enemyHp">100</div>
+            </div>
+        </div>
+
+        <!-- Controles Mobile -->
+        <div class="mobile-controls">
+            <div class="joystick-area" id="joystickArea">
+                <div class="joystick-base"></div>
+                <div class="joystick-thumb" id="joystickThumb"></div>
+            </div>
+            <div class="shoot-button" id="shootButton">
+                🔫
+                <span>ATIRAR</span>
+            </div>
+        </div>
+
+        <div class="controls-info">
+            🎮 WASD / SETAS → MOVER | 🖱️ MOUSE → MIRAR | 🔫 ESPAÇO/CLIQUE → ATIRAR
+        </div>
+    </div>
+
+    <div id="gameOver" class="game-over hidden">
+        <h1 id="gameOverTitle" style="color:#DAA520">💀 DERROTA 💀</h1>
+        <p id="gameOverText">Você foi mais lento que o inimigo...</p>
+        <p>Honra: <span id="finalHonor">0</span> | Vitórias: <span id="finalWins">0</span></p>
+        <button onclick="resetGame()">🤠 NOVO DUELO 🤠</button>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURAÇÕES
+        // ============================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = 900;
+        canvas.height = 550;
+
+        // ============================================
+        // TECLAS (Desktop)
+        // ============================================
+        const keys = {
+            up: false, down: false, left: false, right: false
+        };
+
+        // ============================================
+        // JOYSTICK (Mobile)
+        // ============================================
+        let joystickActive = false;
+        let joystickVector = { x: 0, y: 0 };
+        let joystickCenter = { x: 0, y: 0 };
+        let joystickRadiusVal = 45;
+
+        // ============================================
+        // JOGADOR
+        // ============================================
+        let player = {
+            x: 150,
+            y: canvas.height / 2,
+            hp: 100,
+            maxHp: 100,
+            honor: 0,
+            wins: 0,
+            speed: 300,
+            radius: 20
+        };
+
+        // ============================================
+        // INIMIGO (IA que se move)
+        // ============================================
+        let enemy = {
+            x: canvas.width - 150,
+            y: canvas.height / 2,
+            hp: 100,
+            maxHp: 100,
+            speed: 200,
+            radius: 20,
+            moveDirection: { x: 0, y: 0 },
+            moveTimer: 0
+        };
+
+        // ============================================
+        // TIROS
+        // ============================================
+        let bullets = [];
+        let playerShootCooldown = 0;
+        let enemyShootCooldown = 0;
+        
+        // ============================================
+        // ESTADO DO DUELO
+        // ============================================
+        let gameRunning = true;
+        let message = "";
+        let messageTimer = 0;
+        
+        // Duelistas
+        const outlaws = [
+            "Billy the Kid", "Jesse James", "Doc Holliday", 
+            "Wild Bill Hickok", "Butch Cassidy", "Sundance Kid",
+            "El Paso Pete", "Tucson Jim", "Red Rock Rider"
+        ];
+        let currentOutlaw = outlaws[Math.floor(Math.random() * outlaws.length)];
+        
+        // ============================================
+        // MOUSE
+        // ============================================
+        let mouseX = player.x;
+        let mouseY = player.y;
+        
+        // ============================================
+        // FUNÇÕES
+        // ============================================
+        
+        function updateUI() {
+            const playerPercent = (player.hp / player.maxHp) * 100;
+            const enemyPercent = (enemy.hp / enemy.maxHp) * 100;
+            document.getElementById('playerHealth').style.width = playerPercent + '%';
+            document.getElementById('playerHp').innerText = Math.floor(player.hp);
+            document.getElementById('enemyHealth').style.width = enemyPercent + '%';
+            document.getElementById('enemyHp').innerText = Math.floor(enemy.hp);
+            document.getElementById('honor').innerText = player.honor;
+            document.getElementById('wins').innerText = player.wins;
+        }
+
+        function showMessage(text, isGood = true) {
+            message = text;
+            messageTimer = 2;
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'duel-text';
+            msgDiv.style.position = 'absolute';
+            msgDiv.style.top = '50%';
+            msgDiv.style.left = '50%';
+            msgDiv.style.fontSize = '28px';
+            msgDiv.style.color = isGood ? '#DAA520' : '#FF4444';
+            msgDiv.style.whiteSpace = 'nowrap';
+            msgDiv.style.zIndex = '200';
+            msgDiv.style.pointerEvents = 'none';
+            msgDiv.innerText = text;
+            document.body.appendChild(msgDiv);
+            
+            setTimeout(() => {
+                msgDiv.remove();
+            }, 1500);
+        }
+
+        function shoot(source, targetX, targetY, isPlayer) {
+            if (isPlayer && playerShootCooldown > 0) return;
+            if (!isPlayer && enemyShootCooldown > 0) return;
+            
+            // Calcular direção
+            const dx = targetX - source.x;
+            const dy = targetY - source.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist === 0) return;
+            
+            const dirX = dx / dist;
+            const dirY = dy / dist;
+            
+            bullets.push({
+                x: source.x,
+                y: source.y,
+                vx: dirX * 500,
+                vy: dirY * 500,
+                damage: isPlayer ? 25 : 20,
+                isPlayer: isPlayer,
+                active: true,
+                life: true
+            });
+            
+            if (isPlayer) {
+                playerShootCooldown = 0.4;
+            } else {
+                enemyShootCooldown = 1.0;
+            }
+        }
+        
+        // ============================================
+        // ATUALIZAÇÃO DO JOGO
+        // ============================================
+        
+        function updateGame(deltaTime) {
+            if (!gameRunning) return;
+            
+            // ========== MOVIMENTO DO JOGADOR ==========
+            let moveX = 0, moveY = 0;
+            
+            if (keys.up) moveY -= 1;
+            if (keys.down) moveY += 1;
+            if (keys.left) moveX -= 1;
+            if (keys.right) moveX += 1;
+            
+            if (joystickActive) {
+                moveX += joystickVector.x;
+                moveY += joystickVector.y;
+            }
+            
+            if (moveX !== 0 || moveY !== 0) {
+                const len = Math.hypot(moveX, moveY);
+                moveX /= len;
+                moveY /= len;
+            }
+            
+            player.x += moveX * player.speed * deltaTime;
+            player.y += moveY * player.speed * deltaTime;
+            
+            // Limites
+            player.x = Math.min(Math.max(player.x, 40), canvas.width - 40);
+            player.y = Math.min(Math.max(player.y, 60), canvas.height - 60);
+            
+            // ========== MOVIMENTO DO INIMIGO (IA) ==========
+            enemy.moveTimer += deltaTime;
+            
+            // Mudar direção a cada 2 segundos
+            if (enemy.moveTimer > 2) {
+                enemy.moveTimer = 0;
+                enemy.moveDirection.x = (Math.random() - 0.5) * 2;
+                enemy.moveDirection.y = (Math.random() - 0.5) * 2;
+                const len = Math.hypot(enemy.moveDirection.x, enemy.moveDirection.y);
+                if (len > 0) {
+                    enemy.moveDirection.x /= len;
+                    enemy.moveDirection.y /= len;
+                }
+            }
+            
+            enemy.x += enemy.moveDirection.x * enemy.speed * deltaTime;
+            enemy.y += enemy.moveDirection.y * enemy.speed * deltaTime;
+            
+            // Limites do inimigo
+            enemy.x = Math.min(Math.max(enemy.x, 40), canvas.width - 40);
+            enemy.y = Math.min(Math.max(enemy.y, 60), canvas.height - 60);
+            
+            // ========== COOLDOWNS ==========
+            if (playerShootCooldown > 0) {
+                playerShootCooldown -= deltaTime;
+            }
+            if (enemyShootCooldown > 0) {
+                enemyShootCooldown -= deltaTime;
+            }
+            
+            // ========== INIMIGO ATIRA (IA) ==========
+            if (enemyShootCooldown <= 0 && Math.random() < 0.02 * deltaTime * 60) {
+                shoot(enemy, player.x, player.y, false);
+            }
+            
+            // ========== ATUALIZAR TIROS ==========
+            for (let i = 0; i < bullets.length; i++) {
+                const b = bullets[i];
+                b.x += b.vx * deltaTime;
+                b.y += b.vy * deltaTime;
+                
+                // Fora da tela
+                if (b.x < -50 || b.x > canvas.width + 50 || b.y < -50 || b.y > canvas.height + 50) {
+                    bullets.splice(i, 1);
+                    i--;
+                    continue;
+                }
+                
+                let hit = false;
+                
+                if (b.isPlayer) {
+                    // Bala do jogador acerta inimigo
+                    const dx = b.x - enemy.x;
+                    const dy = b.y - enemy.y;
+                    const dist = Math.hypot(dx, dy);
+                    
+                    if (dist < enemy.radius) {
+                        enemy.hp -= b.damage;
+                        hit = true;
+                        showMessage(`💥 ACERTOU! -${b.damage} HP! 💥`, true);
+                        updateUI();
+                        
+                        if (enemy.hp <= 0) {
+                            player.wins++;
+                            player.honor += 25;
+                            currentOutlaw = outlaws[Math.floor(Math.random() * outlaws.length)];
+                            enemy.hp = enemy.maxHp;
+                            player.hp = Math.min(player.maxHp, player.hp + 20);
+                            showMessage(`🤠 VOCÊ DERROTOU ${currentOutlaw.toUpperCase()}! +25 HONRA 🤠`, true);
+                            updateUI();
+                        }
+                    }
+                } else {
+                    // Bala do inimigo acerta jogador
+                    const dx = b.x - player.x;
+                    const dy = b.y - player.y;
+                    const dist = Math.hypot(dx, dy);
+                    
+                    if (dist < player.radius) {
+                        player.hp -= b.damage;
+                        hit = true;
+                        showMessage(`💔 VOCÊ FOI ATINGIDO! -${b.damage} HP! 💔`, false);
+                        updateUI();
+                        
+                        if (player.hp <= 0) {
+                            gameRunning = false;
+                            document.getElementById('gameOverTitle').innerHTML = '💀 DERROTA NO DUELO 💀';
+                            document.getElementById('gameOverTitle').style.color = '#FF4444';
+                            document.getElementById('gameOverText').innerHTML = `${currentOutlaw} te derrotou no duelo...`;
+                            document.getElementById('finalHonor').innerText = player.honor;
+                            document.getElementById('finalWins').innerText = player.wins;
+                            document.getElementById('gameOver').classList.remove('hidden');
+                            return;
+                        }
+                    }
+                }
+                
+                if (hit) {
+                    bullets.splice(i, 1);
+                    i--;
+                }
+            }
+            
+            // Atualizar mensagem
+            if (messageTimer > 0) {
+                messageTimer -= deltaTime;
+            }
+        }
+        
+        // ============================================
+        // DESENHO
+        // ============================================
+        
+        function drawBackground() {
+            // Céu do velho oeste
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#D2691E');
+            grad.addColorStop(0.4, '#CD853F');
+            grad.addColorStop(1, '#8B4513');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Sol poente
+            ctx.fillStyle = '#FFD700';
+            ctx.shadowBlur = 30;
+            ctx.beginPath();
+            ctx.arc(canvas.width - 80, 70, 50, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Chão
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(0, canvas.height - 70, canvas.width, 70);
+            
+            // Grama/areia
+            ctx.fillStyle = '#8B7355';
+            for (let i = 0; i < canvas.width; i += 20) {
+                ctx.fillRect(i, canvas.height - 75, 10, 8);
+            }
+            
+            // Cactos
+            ctx.fillStyle = '#2E8B57';
+            for (let i = 0; i < 5; i++) {
+                const x = 50 + i * 200;
+                ctx.fillRect(x, canvas.height - 120, 8, 50);
+                ctx.fillRect(x - 10, canvas.height - 130, 8, 30);
+                ctx.fillRect(x + 10, canvas.height - 130, 8, 30);
+            }
+            
+            // Placa
+            ctx.fillStyle = '#A0522D';
+            ctx.fillRect(canvas.width / 2 - 100, canvas.height - 110, 200, 35);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 12px monospace';
+            ctx.fillText("TOMBSTONE - DUELO", canvas.width / 2 - 70, canvas.height - 87);
+            
+            ctx.shadowBlur = 0;
+        }
+        
+        function drawCowboy(x, y, isPlayer, direction) {
+            ctx.save();
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            
+            // Chapéu
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x - 25, y - 35, 50, 10);
+            ctx.fillRect(x - 15, y - 45, 30, 15);
+            
+            // Cabeça
+            ctx.fillStyle = '#DEB887';
+            ctx.beginPath();
+            ctx.ellipse(x, y - 25, 15, 18, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Olhos (direção para o alvo)
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(x - 8 + (direction * 3), y - 28, 3, 0, Math.PI * 2);
+            ctx.arc(x + 8 + (direction * 3), y - 28, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Bigode
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x - 12, y - 20, 24, 5);
+            
+            // Corpo
+            ctx.fillStyle = isPlayer ? '#4169E1' : '#DC143C';
+            ctx.fillRect(x - 18, y - 12, 36, 40);
+            
+            // Cinto
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x - 20, y + 5, 40, 8);
+            
+            // Coldre
+            ctx.fillStyle = '#5C3317';
+            ctx.fillRect(isPlayer ? x + 10 : x - 25, y + 8, 20, 25);
+            
+            // Braço com pistola
+            ctx.fillStyle = '#696969';
+            ctx.fillRect(isPlayer ? x + 20 : x - 35, y - 5, 30, 8);
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(isPlayer ? x + 45 : x - 40, y - 8, 15, 11);
+            
+            ctx.restore();
+        }
+        
+        function drawBullets() {
+            for (const b of bullets) {
+                ctx.fillStyle = b.isPlayer ? '#FFD700' : '#FF6347';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Rastro
+                ctx.fillStyle = b.isPlayer ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 99, 71, 0.3)';
+                ctx.beginPath();
+                ctx.arc(b.x - b.vx * 0.05, b.y - b.vy * 0.05, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.shadowBlur = 0;
+        }
+        
+        function drawUI() {
+            // Nome do inimigo
+            ctx.font = 'bold 14px monospace';
+            ctx.fillStyle = '#DAA520';
+            ctx.shadowBlur = 3;
+            ctx.fillText(currentOutlaw, enemy.x - 45, enemy.y - 40);
+            
+            // Indicador de cooldown do tiro
+            if (playerShootCooldown > 0) {
+                ctx.fillStyle = 'rgba(218, 165, 32, 0.5)';
+                ctx.beginPath();
+                ctx.arc(player.x + 15, player.y - 20, 12, 0, Math.PI * 2 * (1 - playerShootCooldown / 0.4), 0);
+                ctx.fill();
+            }
+            
+            // Mensagem flutuante
+            if (messageTimer > 0) {
+                ctx.font = 'bold 20px monospace';
+                ctx.fillStyle = '#DAA520';
+                ctx.shadowBlur = 5;
+                ctx.fillText(message, canvas.width / 2 - ctx.measureText(message).width / 2, 80);
+            }
+        }
+        
+        function drawAim() {
+            if (!gameRunning) return;
+            
+            // Linha de mira
+            ctx.beginPath();
+            ctx.moveTo(player.x, player.y);
+            ctx.lineTo(mouseX, mouseY);
+            ctx.strokeStyle = 'rgba(218, 165, 32, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Mira
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 12, 0, Math.PI * 2);
+            ctx.strokeStyle = '#DAA520';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(mouseX - 20, mouseY);
+            ctx.lineTo(mouseX - 8, mouseY);
+            ctx.moveTo(mouseX + 8, mouseY);
+            ctx.lineTo(mouseX + 20, mouseY);
+            ctx.moveTo(mouseX, mouseY - 20);
+            ctx.lineTo(mouseX, mouseY - 8);
+            ctx.moveTo(mouseX, mouseY + 8);
+            ctx.lineTo(mouseX, mouseY + 20);
+            ctx.stroke();
+        }
+        
+        function draw() {
+            drawBackground();
+            
+            // Desenhar personagens
+            const playerDirection = (mouseX - player.x) / Math.abs(mouseX - player.x) || 1;
+            const enemyDirection = (player.x - enemy.x) / Math.abs(player.x - enemy.x) || -1;
+            
+            drawCowboy(player.x, player.y, true, playerDirection);
+            drawCowboy(enemy.x, enemy.y, false, enemyDirection);
+            
+            drawBullets();
+            drawUI();
+            drawAim();
+        }
+        
+        // ============================================
+        // RESETAR JOGO
+        // ============================================
+        function resetGame() {
+            player = {
+                x: 150,
+                y: canvas.height / 2,
+                hp: 100,
+                maxHp: 100,
+                honor: 0,
+                wins: 0,
+                speed: 300,
+                radius: 20
+            };
+            
+            enemy = {
+                x: canvas.width - 150,
+                y: canvas.height / 2,
+                hp: 100,
+                maxHp: 100,
+                speed: 200,
+                radius: 20,
+                moveDirection: { x: 0, y: 0 },
+                moveTimer: 0
+            };
+            
+            bullets = [];
+            playerShootCooldown = 0;
+            enemyShootCooldown = 0;
+            gameRunning = true;
+            currentOutlaw = outlaws[Math.floor(Math.random() * outlaws.length)];
+            
+            updateUI();
+            document.getElementById('gameOver').classList.add('hidden');
+        }
+        
+        // ============================================
+        // EVENTOS
+        // ============================================
+        
+        // Teclado
+        window.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (key === 'ArrowUp') keys.up = true;
+            if (key === 'ArrowDown') keys.down = true;
+            if (key === 'ArrowLeft') keys.left = true;
+            if (key === 'ArrowRight') keys.right = true;
+            if (key === 'w' || key === 'W') keys.up = true;
+            if (key === 's' || key === 'S') keys.down = true;
+            if (key === 'a' || key === 'A') keys.left = true;
+            if (key === 'd' || key === 'D') keys.right = true;
+            if (key === ' ') {
+                e.preventDefault();
+                if (gameRunning) shoot(player, mouseX, mouseY, true);
+            }
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            const key = e.key;
+            if (key === 'ArrowUp') keys.up = false;
+            if (key === 'ArrowDown') keys.down = false;
+            if (key === 'ArrowLeft') keys.left = false;
+            if (key === 'ArrowRight') keys.right = false;
+            if (key === 'w' || key === 'W') keys.up = false;
+            if (key === 's' || key === 'S') keys.down = false;
+            if (key === 'a' || key === 'A') keys.left = false;
+            if (key === 'd' || key === 'D') keys.right = false;
+        });
+        
+        // Mouse
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            mouseX = (e.clientX - rect.left) * scaleX;
+            mouseY = (e.clientY - rect.top) * scaleY;
+            mouseX = Math.min(Math.max(mouseX, 20), canvas.width - 20);
+            mouseY = Math.min(Math.max(mouseY, 20), canvas.height - 20);
+        });
+        
+        canvas.addEventListener('click', (e) => {
+            if (!gameRunning) return;
+            shoot(player, mouseX, mouseY, true);
+        });
+        
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        // ============================================
+        // JOYSTICK MOBILE
+        // ============================================
+        const joystickArea = document.getElementById('joystickArea');
+        const joystickThumb = document.getElementById('joystickThumb');
+        
+        function getJoystickCenter() {
+            const rect = joystickArea.getBoundingClientRect();
+            return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        }
+        
+        function handleJoystickStart(e) {
+            e.preventDefault();
+            joystickActive = true;
+            joystickCenter = getJoystickCenter();
+        }
+        
+        function handleJoystickMove(e) {
+            if (!joystickActive) return;
+            e.preventDefault();
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            let dx = clientX - joystickCenter.x;
+            let dy = clientY - joystickCenter.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > joystickRadiusVal) {
+                dx = (dx / distance) * joystickRadiusVal;
+                dy = (dy / distance) * joystickRadiusVal;
+            }
+            
+            joystickThumb.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            joystickVector.x = dx / joystickRadiusVal;
+            joystickVector.y = dy / joystickRadiusVal;
+        }
+        
+        function handleJoystickEnd(e) {
+            joystickActive = false;
+            joystickThumb.style.transform = 'translate(-50%, -50%)';
+            joystickVector = { x: 0, y: 0 };
+        }
+        
+        joystickArea.addEventListener('touchstart', handleJoystickStart);
+        joystickArea.addEventListener('touchmove', handleJoystickMove);
+        joystickArea.addEventListener('touchend', handleJoystickEnd);
+        
+        // Botão de tiro mobile
+        const shootBtn = document.getElementById('shootButton');
+        shootBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameRunning) shoot(player, mouseX, mouseY, true);
+        });
+        shootBtn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            if (gameRunning) shoot(player, mouseX, mouseY, true);
+        });
+        
+        // ============================================
+        // LOOP DO JOGO
+        // ============================================
+        let lastTime = 0;
+        
+        function gameLoop(currentTime) {
+            let deltaTime = (currentTime - lastTime) / 1000;
+            if (deltaTime > 0.033) deltaTime = 0.033;
+            lastTime = currentTime;
+            
+            if (deltaTime > 0) {
+                updateGame(deltaTime);
+            }
+            
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Iniciar jogo
+        updateUI();
+        lastTime = performance.now();
+        gameLoop(lastTime);
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🤠 COWBOY DUEL - Movimento e Desvio 🤠</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #2a1a0a 0%, #1a0a00 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', 'Monaco', monospace;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .game-container {
+            position: relative;
+            background: #3a2a1a;
+            border-radius: 20px;
+            padding: 10px;
+            border: 5px solid #8B6914;
+            box-shadow: 0 0 50px rgba(139, 105, 20, 0.5);
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 10px;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-card {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            padding: 8px 15px;
+            border-radius: 10px;
+            border: 2px solid #8B6914;
+            text-align: center;
+        }
+
+        .hud-label {
+            font-size: 10px;
+            color: #DAA520;
+            letter-spacing: 2px;
+        }
+
+        .hud-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0 0 5px #DAA520;
+        }
+
+        .health-bar {
+            width: 120px;
+            height: 8px;
+            background: #330000;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #DAA520, #FF6600);
+            transition: width 0.2s;
+        }
+
+        /* Controles Mobile */
+        .mobile-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .joystick-area {
+            pointer-events: auto;
+            width: 120px;
+            height: 120px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+            border: 2px solid #DAA520;
+            position: relative;
+        }
+
+        .joystick-base {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            background: rgba(218, 165, 32, 0.15);
+            border-radius: 50%;
+        }
+
+        .joystick-thumb {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: #DAA520;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.05s linear;
+            box-shadow: 0 0 15px #DAA520;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .shoot-button {
+            pointer-events: auto;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #DAA520, #8B6914);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #FFD700;
+            box-shadow: 0 0 20px rgba(218, 165, 32, 0.5);
+            cursor: pointer;
+            transition: transform 0.1s;
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .shoot-button:active {
+            transform: scale(0.95);
+        }
+
+        .shoot-button span {
+            font-size: 10px;
+            margin-top: 3px;
+        }
+
+        .controls-info {
+            position: absolute;
+            bottom: 20px;
+            left: 150px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 9px;
+            color: #DAA520;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .duel-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: #DAA520;
+            text-shadow: 3px 3px 0 #8B4513;
+            white-space: nowrap;
+            z-index: 20;
+            pointer-events: none;
+            animation: fadeOut 1s forwards;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+        }
+
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 30px 50px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 1000;
+            border: 3px solid #DAA520;
+            box-shadow: 0 0 50px rgba(218, 165, 32, 0.5);
+        }
+
+        .game-over h1 {
+            font-size: 42px;
+            margin-bottom: 15px;
+        }
+
+        .game-over p {
+            color: #ccc;
+            margin: 10px 0;
+        }
+
+        button {
+            background: linear-gradient(135deg, #DAA520, #8B6914);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: monospace;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (min-width: 769px) {
+            .mobile-controls {
+                display: none;
+            }
+            .controls-info {
+                display: block;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hud-value {
+                font-size: 14px;
+            }
+            .health-bar {
+                width: 80px;
+            }
+            .controls-info {
+                display: none;
+            }
+            .joystick-area {
+                width: 100px;
+                height: 100px;
+            }
+            .joystick-base {
+                width: 60px;
+                height: 60px;
+            }
+            .joystick-thumb {
+                width: 35px;
+                height: 35px;
+            }
+            .shoot-button {
+                width: 70px;
+                height: 70px;
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .joystick-area {
+                width: 85px;
+                height: 85px;
+            }
+            .shoot-button {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="900" height="550"></canvas>
+        
+        <div class="hud">
+            <div class="hud-card">
+                <div class="hud-label">🤠 VOCÊ</div>
+                <div class="health-bar">
+                    <div class="health-fill" id="playerHealth" style="width: 100%"></div>
+                </div>
+                <div class="hud-value" id="playerHp">100</div>
+            </div>
+            <div class="hud-card">
+                <div class="hud-label">⭐ HONRA</div>
+                <div class="hud-value" id="honor">0</div>
+            </div>
+            <div class="hud-card">
+                <div class="hud-label">🏆 VITÓRIAS</div>
+                <div class="hud-value" id="wins">0</div>
+            </div>
+            <div class="hud-card">
+                <div class="hud-label">🤠 INIMIGO</div>
+                <div class="health-bar">
+                    <div class="health-fill" id="enemyHealth" style="width: 100%"></div>
+                </div>
+                <div class="hud-value" id="enemyHp">100</div>
+            </div>
+        </div>
+
+        <!-- Controles Mobile -->
+        <div class="mobile-controls">
+            <div class="joystick-area" id="joystickArea">
+                <div class="joystick-base"></div>
+                <div class="joystick-thumb" id="joystickThumb"></div>
+            </div>
+            <div class="shoot-button" id="shootButton">
+                🔫
+                <span>ATIRAR</span>
+            </div>
+        </div>
+
+        <div class="controls-info">
+            🎮 WASD / SETAS → MOVER | 🖱️ MOUSE → MIRAR | 🔫 ESPAÇO/CLIQUE → ATIRAR
+        </div>
+    </div>
+
+    <div id="gameOver" class="game-over hidden">
+        <h1 id="gameOverTitle" style="color:#DAA520">💀 DERROTA 💀</h1>
+        <p id="gameOverText">Você foi mais lento que o inimigo...</p>
+        <p>Honra: <span id="finalHonor">0</span> | Vitórias: <span id="finalWins">0</span></p>
+        <button onclick="resetGame()">🤠 NOVO DUELO 🤠</button>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURAÇÕES
+        // ============================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = 900;
+        canvas.height = 550;
+
+        // ============================================
+        // TECLAS (Desktop)
+        // ============================================
+        const keys = {
+            up: false, down: false, left: false, right: false
+        };
+
+        // ============================================
+        // JOYSTICK (Mobile)
+        // ============================================
+        let joystickActive = false;
+        let joystickVector = { x: 0, y: 0 };
+        let joystickCenter = { x: 0, y: 0 };
+        let joystickRadiusVal = 45;
+
+        // ============================================
+        // JOGADOR
+        // ============================================
+        let player = {
+            x: 150,
+            y: canvas.height / 2,
+            hp: 100,
+            maxHp: 100,
+            honor: 0,
+            wins: 0,
+            speed: 300,
+            radius: 20
+        };
+
+        // ============================================
+        // INIMIGO (IA que se move)
+        // ============================================
+        let enemy = {
+            x: canvas.width - 150,
+            y: canvas.height / 2,
+            hp: 100,
+            maxHp: 100,
+            speed: 200,
+            radius: 20,
+            moveDirection: { x: 0, y: 0 },
+            moveTimer: 0
+        };
+
+        // ============================================
+        // TIROS
+        // ============================================
+        let bullets = [];
+        let playerShootCooldown = 0;
+        let enemyShootCooldown = 0;
+        
+        // ============================================
+        // ESTADO DO DUELO
+        // ============================================
+        let gameRunning = true;
+        let message = "";
+        let messageTimer = 0;
+        
+        // Duelistas
+        const outlaws = [
+            "Billy the Kid", "Jesse James", "Doc Holliday", 
+            "Wild Bill Hickok", "Butch Cassidy", "Sundance Kid",
+            "El Paso Pete", "Tucson Jim", "Red Rock Rider"
+        ];
+        let currentOutlaw = outlaws[Math.floor(Math.random() * outlaws.length)];
+        
+        // ============================================
+        // MOUSE
+        // ============================================
+        let mouseX = player.x;
+        let mouseY = player.y;
+        
+        // ============================================
+        // FUNÇÕES
+        // ============================================
+        
+        function updateUI() {
+            const playerPercent = (player.hp / player.maxHp) * 100;
+            const enemyPercent = (enemy.hp / enemy.maxHp) * 100;
+            document.getElementById('playerHealth').style.width = playerPercent + '%';
+            document.getElementById('playerHp').innerText = Math.floor(player.hp);
+            document.getElementById('enemyHealth').style.width = enemyPercent + '%';
+            document.getElementById('enemyHp').innerText = Math.floor(enemy.hp);
+            document.getElementById('honor').innerText = player.honor;
+            document.getElementById('wins').innerText = player.wins;
+        }
+
+        function showMessage(text, isGood = true) {
+            message = text;
+            messageTimer = 2;
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'duel-text';
+            msgDiv.style.position = 'absolute';
+            msgDiv.style.top = '50%';
+            msgDiv.style.left = '50%';
+            msgDiv.style.fontSize = '28px';
+            msgDiv.style.color = isGood ? '#DAA520' : '#FF4444';
+            msgDiv.style.whiteSpace = 'nowrap';
+            msgDiv.style.zIndex = '200';
+            msgDiv.style.pointerEvents = 'none';
+            msgDiv.innerText = text;
+            document.body.appendChild(msgDiv);
+            
+            setTimeout(() => {
+                msgDiv.remove();
+            }, 1500);
+        }
+
+        function shoot(source, targetX, targetY, isPlayer) {
+            if (isPlayer && playerShootCooldown > 0) return;
+            if (!isPlayer && enemyShootCooldown > 0) return;
+            
+            // Calcular direção
+            const dx = targetX - source.x;
+            const dy = targetY - source.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist === 0) return;
+            
+            const dirX = dx / dist;
+            const dirY = dy / dist;
+            
+            bullets.push({
+                x: source.x,
+                y: source.y,
+                vx: dirX * 500,
+                vy: dirY * 500,
+                damage: isPlayer ? 25 : 20,
+                isPlayer: isPlayer,
+                active: true,
+                life: true
+            });
+            
+            if (isPlayer) {
+                playerShootCooldown = 0.4;
+            } else {
+                enemyShootCooldown = 1.0;
+            }
+        }
+        
+        // ============================================
+        // ATUALIZAÇÃO DO JOGO
+        // ============================================
+        
+        function updateGame(deltaTime) {
+            if (!gameRunning) return;
+            
+            // ========== MOVIMENTO DO JOGADOR ==========
+            let moveX = 0, moveY = 0;
+            
+            if (keys.up) moveY -= 1;
+            if (keys.down) moveY += 1;
+            if (keys.left) moveX -= 1;
+            if (keys.right) moveX += 1;
+            
+            if (joystickActive) {
+                moveX += joystickVector.x;
+                moveY += joystickVector.y;
+            }
+            
+            if (moveX !== 0 || moveY !== 0) {
+                const len = Math.hypot(moveX, moveY);
+                moveX /= len;
+                moveY /= len;
+            }
+            
+            player.x += moveX * player.speed * deltaTime;
+            player.y += moveY * player.speed * deltaTime;
+            
+            // Limites
+            player.x = Math.min(Math.max(player.x, 40), canvas.width - 40);
+            player.y = Math.min(Math.max(player.y, 60), canvas.height - 60);
+            
+            // ========== MOVIMENTO DO INIMIGO (IA) ==========
+            enemy.moveTimer += deltaTime;
+            
+            // Mudar direção a cada 2 segundos
+            if (enemy.moveTimer > 2) {
+                enemy.moveTimer = 0;
+                enemy.moveDirection.x = (Math.random() - 0.5) * 2;
+                enemy.moveDirection.y = (Math.random() - 0.5) * 2;
+                const len = Math.hypot(enemy.moveDirection.x, enemy.moveDirection.y);
+                if (len > 0) {
+                    enemy.moveDirection.x /= len;
+                    enemy.moveDirection.y /= len;
+                }
+            }
+            
+            enemy.x += enemy.moveDirection.x * enemy.speed * deltaTime;
+            enemy.y += enemy.moveDirection.y * enemy.speed * deltaTime;
+            
+            // Limites do inimigo
+            enemy.x = Math.min(Math.max(enemy.x, 40), canvas.width - 40);
+            enemy.y = Math.min(Math.max(enemy.y, 60), canvas.height - 60);
+            
+            // ========== COOLDOWNS ==========
+            if (playerShootCooldown > 0) {
+                playerShootCooldown -= deltaTime;
+            }
+            if (enemyShootCooldown > 0) {
+                enemyShootCooldown -= deltaTime;
+            }
+            
+            // ========== INIMIGO ATIRA (IA) ==========
+            if (enemyShootCooldown <= 0 && Math.random() < 0.02 * deltaTime * 60) {
+                shoot(enemy, player.x, player.y, false);
+            }
+            
+            // ========== ATUALIZAR TIROS ==========
+            for (let i = 0; i < bullets.length; i++) {
+                const b = bullets[i];
+                b.x += b.vx * deltaTime;
+                b.y += b.vy * deltaTime;
+                
+                // Fora da tela
+                if (b.x < -50 || b.x > canvas.width + 50 || b.y < -50 || b.y > canvas.height + 50) {
+                    bullets.splice(i, 1);
+                    i--;
+                    continue;
+                }
+                
+                let hit = false;
+                
+                if (b.isPlayer) {
+                    // Bala do jogador acerta inimigo
+                    const dx = b.x - enemy.x;
+                    const dy = b.y - enemy.y;
+                    const dist = Math.hypot(dx, dy);
+                    
+                    if (dist < enemy.radius) {
+                        enemy.hp -= b.damage;
+                        hit = true;
+                        showMessage(`💥 ACERTOU! -${b.damage} HP! 💥`, true);
+                        updateUI();
+                        
+                        if (enemy.hp <= 0) {
+                            player.wins++;
+                            player.honor += 25;
+                            currentOutlaw = outlaws[Math.floor(Math.random() * outlaws.length)];
+                            enemy.hp = enemy.maxHp;
+                            player.hp = Math.min(player.maxHp, player.hp + 20);
+                            showMessage(`🤠 VOCÊ DERROTOU ${currentOutlaw.toUpperCase()}! +25 HONRA 🤠`, true);
+                            updateUI();
+                        }
+                    }
+                } else {
+                    // Bala do inimigo acerta jogador
+                    const dx = b.x - player.x;
+                    const dy = b.y - player.y;
+                    const dist = Math.hypot(dx, dy);
+                    
+                    if (dist < player.radius) {
+                        player.hp -= b.damage;
+                        hit = true;
+                        showMessage(`💔 VOCÊ FOI ATINGIDO! -${b.damage} HP! 💔`, false);
+                        updateUI();
+                        
+                        if (player.hp <= 0) {
+                            gameRunning = false;
+                            document.getElementById('gameOverTitle').innerHTML = '💀 DERROTA NO DUELO 💀';
+                            document.getElementById('gameOverTitle').style.color = '#FF4444';
+                            document.getElementById('gameOverText').innerHTML = `${currentOutlaw} te derrotou no duelo...`;
+                            document.getElementById('finalHonor').innerText = player.honor;
+                            document.getElementById('finalWins').innerText = player.wins;
+                            document.getElementById('gameOver').classList.remove('hidden');
+                            return;
+                        }
+                    }
+                }
+                
+                if (hit) {
+                    bullets.splice(i, 1);
+                    i--;
+                }
+            }
+            
+            // Atualizar mensagem
+            if (messageTimer > 0) {
+                messageTimer -= deltaTime;
+            }
+        }
+        
+        // ============================================
+        // DESENHO
+        // ============================================
+        
+        function drawBackground() {
+            // Céu do velho oeste
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#D2691E');
+            grad.addColorStop(0.4, '#CD853F');
+            grad.addColorStop(1, '#8B4513');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Sol poente
+            ctx.fillStyle = '#FFD700';
+            ctx.shadowBlur = 30;
+            ctx.beginPath();
+            ctx.arc(canvas.width - 80, 70, 50, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Chão
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(0, canvas.height - 70, canvas.width, 70);
+            
+            // Grama/areia
+            ctx.fillStyle = '#8B7355';
+            for (let i = 0; i < canvas.width; i += 20) {
+                ctx.fillRect(i, canvas.height - 75, 10, 8);
+            }
+            
+            // Cactos
+            ctx.fillStyle = '#2E8B57';
+            for (let i = 0; i < 5; i++) {
+                const x = 50 + i * 200;
+                ctx.fillRect(x, canvas.height - 120, 8, 50);
+                ctx.fillRect(x - 10, canvas.height - 130, 8, 30);
+                ctx.fillRect(x + 10, canvas.height - 130, 8, 30);
+            }
+            
+            // Placa
+            ctx.fillStyle = '#A0522D';
+            ctx.fillRect(canvas.width / 2 - 100, canvas.height - 110, 200, 35);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 12px monospace';
+            ctx.fillText("TOMBSTONE - DUELO", canvas.width / 2 - 70, canvas.height - 87);
+            
+            ctx.shadowBlur = 0;
+        }
+        
+        function drawCowboy(x, y, isPlayer, direction) {
+            ctx.save();
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            
+            // Chapéu
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x - 25, y - 35, 50, 10);
+            ctx.fillRect(x - 15, y - 45, 30, 15);
+            
+            // Cabeça
+            ctx.fillStyle = '#DEB887';
+            ctx.beginPath();
+            ctx.ellipse(x, y - 25, 15, 18, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Olhos (direção para o alvo)
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(x - 8 + (direction * 3), y - 28, 3, 0, Math.PI * 2);
+            ctx.arc(x + 8 + (direction * 3), y - 28, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Bigode
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x - 12, y - 20, 24, 5);
+            
+            // Corpo
+            ctx.fillStyle = isPlayer ? '#4169E1' : '#DC143C';
+            ctx.fillRect(x - 18, y - 12, 36, 40);
+            
+            // Cinto
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x - 20, y + 5, 40, 8);
+            
+            // Coldre
+            ctx.fillStyle = '#5C3317';
+            ctx.fillRect(isPlayer ? x + 10 : x - 25, y + 8, 20, 25);
+            
+            // Braço com pistola
+            ctx.fillStyle = '#696969';
+            ctx.fillRect(isPlayer ? x + 20 : x - 35, y - 5, 30, 8);
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(isPlayer ? x + 45 : x - 40, y - 8, 15, 11);
+            
+            ctx.restore();
+        }
+        
+        function drawBullets() {
+            for (const b of bullets) {
+                ctx.fillStyle = b.isPlayer ? '#FFD700' : '#FF6347';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Rastro
+                ctx.fillStyle = b.isPlayer ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 99, 71, 0.3)';
+                ctx.beginPath();
+                ctx.arc(b.x - b.vx * 0.05, b.y - b.vy * 0.05, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.shadowBlur = 0;
+        }
+        
+        function drawUI() {
+            // Nome do inimigo
+            ctx.font = 'bold 14px monospace';
+            ctx.fillStyle = '#DAA520';
+            ctx.shadowBlur = 3;
+            ctx.fillText(currentOutlaw, enemy.x - 45, enemy.y - 40);
+            
+            // Indicador de cooldown do tiro
+            if (playerShootCooldown > 0) {
+                ctx.fillStyle = 'rgba(218, 165, 32, 0.5)';
+                ctx.beginPath();
+                ctx.arc(player.x + 15, player.y - 20, 12, 0, Math.PI * 2 * (1 - playerShootCooldown / 0.4), 0);
+                ctx.fill();
+            }
+            
+            // Mensagem flutuante
+            if (messageTimer > 0) {
+                ctx.font = 'bold 20px monospace';
+                ctx.fillStyle = '#DAA520';
+                ctx.shadowBlur = 5;
+                ctx.fillText(message, canvas.width / 2 - ctx.measureText(message).width / 2, 80);
+            }
+        }
+        
+        function drawAim() {
+            if (!gameRunning) return;
+            
+            // Linha de mira
+            ctx.beginPath();
+            ctx.moveTo(player.x, player.y);
+            ctx.lineTo(mouseX, mouseY);
+            ctx.strokeStyle = 'rgba(218, 165, 32, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Mira
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 12, 0, Math.PI * 2);
+            ctx.strokeStyle = '#DAA520';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(mouseX - 20, mouseY);
+            ctx.lineTo(mouseX - 8, mouseY);
+            ctx.moveTo(mouseX + 8, mouseY);
+            ctx.lineTo(mouseX + 20, mouseY);
+            ctx.moveTo(mouseX, mouseY - 20);
+            ctx.lineTo(mouseX, mouseY - 8);
+            ctx.moveTo(mouseX, mouseY + 8);
+            ctx.lineTo(mouseX, mouseY + 20);
+            ctx.stroke();
+        }
+        
+        function draw() {
+            drawBackground();
+            
+            // Desenhar personagens
+            const playerDirection = (mouseX - player.x) / Math.abs(mouseX - player.x) || 1;
+            const enemyDirection = (player.x - enemy.x) / Math.abs(player.x - enemy.x) || -1;
+            
+            drawCowboy(player.x, player.y, true, playerDirection);
+            drawCowboy(enemy.x, enemy.y, false, enemyDirection);
+            
+            drawBullets();
+            drawUI();
+            drawAim();
+        }
+        
+        // ============================================
+        // RESETAR JOGO
+        // ============================================
+        function resetGame() {
+            player = {
+                x: 150,
+                y: canvas.height / 2,
+                hp: 100,
+                maxHp: 100,
+                honor: 0,
+                wins: 0,
+                speed: 300,
+                radius: 20
+            };
+            
+            enemy = {
+                x: canvas.width - 150,
+                y: canvas.height / 2,
+                hp: 100,
+                maxHp: 100,
+                speed: 200,
+                radius: 20,
+                moveDirection: { x: 0, y: 0 },
+                moveTimer: 0
+            };
+            
+            bullets = [];
+            playerShootCooldown = 0;
+            enemyShootCooldown = 0;
+            gameRunning = true;
+            currentOutlaw = outlaws[Math.floor(Math.random() * outlaws.length)];
+            
+            updateUI();
+            document.getElementById('gameOver').classList.add('hidden');
+        }
+        
+        // ============================================
+        // EVENTOS
+        // ============================================
+        
+        // Teclado
+        window.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (key === 'ArrowUp') keys.up = true;
+            if (key === 'ArrowDown') keys.down = true;
+            if (key === 'ArrowLeft') keys.left = true;
+            if (key === 'ArrowRight') keys.right = true;
+            if (key === 'w' || key === 'W') keys.up = true;
+            if (key === 's' || key === 'S') keys.down = true;
+            if (key === 'a' || key === 'A') keys.left = true;
+            if (key === 'd' || key === 'D') keys.right = true;
+            if (key === ' ') {
+                e.preventDefault();
+                if (gameRunning) shoot(player, mouseX, mouseY, true);
+            }
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            const key = e.key;
+            if (key === 'ArrowUp') keys.up = false;
+            if (key === 'ArrowDown') keys.down = false;
+            if (key === 'ArrowLeft') keys.left = false;
+            if (key === 'ArrowRight') keys.right = false;
+            if (key === 'w' || key === 'W') keys.up = false;
+            if (key === 's' || key === 'S') keys.down = false;
+            if (key === 'a' || key === 'A') keys.left = false;
+            if (key === 'd' || key === 'D') keys.right = false;
+        });
+        
+        // Mouse
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            mouseX = (e.clientX - rect.left) * scaleX;
+            mouseY = (e.clientY - rect.top) * scaleY;
+            mouseX = Math.min(Math.max(mouseX, 20), canvas.width - 20);
+            mouseY = Math.min(Math.max(mouseY, 20), canvas.height - 20);
+        });
+        
+        canvas.addEventListener('click', (e) => {
+            if (!gameRunning) return;
+            shoot(player, mouseX, mouseY, true);
+        });
+        
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        // ============================================
+        // JOYSTICK MOBILE
+        // ============================================
+        const joystickArea = document.getElementById('joystickArea');
+        const joystickThumb = document.getElementById('joystickThumb');
+        
+        function getJoystickCenter() {
+            const rect = joystickArea.getBoundingClientRect();
+            return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        }
+        
+        function handleJoystickStart(e) {
+            e.preventDefault();
+            joystickActive = true;
+            joystickCenter = getJoystickCenter();
+        }
+        
+        function handleJoystickMove(e) {
+            if (!joystickActive) return;
+            e.preventDefault();
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            let dx = clientX - joystickCenter.x;
+            let dy = clientY - joystickCenter.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > joystickRadiusVal) {
+                dx = (dx / distance) * joystickRadiusVal;
+                dy = (dy / distance) * joystickRadiusVal;
+            }
+            
+            joystickThumb.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            joystickVector.x = dx / joystickRadiusVal;
+            joystickVector.y = dy / joystickRadiusVal;
+        }
+        
+        function handleJoystickEnd(e) {
+            joystickActive = false;
+            joystickThumb.style.transform = 'translate(-50%, -50%)';
+            joystickVector = { x: 0, y: 0 };
+        }
+        
+        joystickArea.addEventListener('touchstart', handleJoystickStart);
+        joystickArea.addEventListener('touchmove', handleJoystickMove);
+        joystickArea.addEventListener('touchend', handleJoystickEnd);
+        
+        // Botão de tiro mobile
+        const shootBtn = document.getElementById('shootButton');
+        shootBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameRunning) shoot(player, mouseX, mouseY, true);
+        });
+        shootBtn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            if (gameRunning) shoot(player, mouseX, mouseY, true);
+        });
+        
+        // ============================================
+        // LOOP DO JOGO
+        // ============================================
+        let lastTime = 0;
+        
+        function gameLoop(currentTime) {
+            let deltaTime = (currentTime - lastTime) / 1000;
+            if (deltaTime > 0.033) deltaTime = 0.033;
+            lastTime = currentTime;
+            
+            if (deltaTime > 0) {
+                updateGame(deltaTime);
+            }
+            
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Iniciar jogo
+        updateUI();
+        lastTime = performance.now();
+        gameLoop(lastTime);
+    </script>
+</body>
+</html>
